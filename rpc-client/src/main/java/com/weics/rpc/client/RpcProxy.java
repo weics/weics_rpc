@@ -18,10 +18,12 @@ public class RpcProxy {
     private ServiceDiscovery serviceDiscovery;
 
     public RpcProxy(String serverAddress) {
+        System.out.println("spring RpcProxy注入成功serverAddress");
         this.serverAddress = serverAddress;
     }
 
     public RpcProxy(ServiceDiscovery serviceDiscovery) {
+        System.out.println("spring RpcProxy注入成功ServiceDiscovery");
         this.serviceDiscovery = serviceDiscovery;
     }
 
@@ -48,12 +50,16 @@ public class RpcProxy {
                         request.setParameters(args);
                         //查找服务
                         if (serviceDiscovery != null) {
+                            System.out.println("开始进入发现服务列表的过程");
                             serverAddress = serviceDiscovery.discover();
                         }
                         //随机获取服务的地址
                         String[] array = serverAddress.split(":");
                         String host = array[0];
+                        System.out.println("获取的host地址是====="+host);
                         int port = Integer.parseInt(array[1]);
+
+                        System.out.println("获取的port地址是====="+port);
                         //创建Netty实现的RpcClient，链接服务端
                         RpcClient client = new RpcClient(host, port);
                         //通过netty向服务端发送请求

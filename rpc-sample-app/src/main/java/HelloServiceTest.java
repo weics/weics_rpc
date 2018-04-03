@@ -2,7 +2,6 @@ import com.weics.rpc.client.RpcProxy;
 import com.weics.rpc.simple.client.HelloService;
 import com.weics.rpc.simple.client.Person;
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
@@ -38,5 +37,4 @@ public class HelloServiceTest {
         System.out.println("服务端返回结果：");
         System.out.println(result);
     }
-
 }

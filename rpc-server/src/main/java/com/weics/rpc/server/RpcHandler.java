@@ -23,56 +23,46 @@ public class RpcHandler extends SimpleChannelInboundHandler<RpcRequest> {
     private static final Logger LOGGER = LoggerFactory
             .getLogger(RpcHandler.class);
 
-    private final Map<String,Object> handlerMap;
+    private final Map<String, Object> handlerMap;
 
-    public RpcHandler(Map<String,Object> handlerMap){
+    public RpcHandler(Map<String, Object> handlerMap) {
         this.handlerMap = handlerMap;
     }
 
-
     /**
-     * 接受消息，处理消息，返回结果
-     * @param channelHandlerContext
-     * @param request
-     * @throws Exception
+     * 接收消息，处理消息，返回结果
      */
-    protected void channelRead0(ChannelHandlerContext channelHandlerContext, RpcRequest request) throws Exception {
-
-        RpcReponse reponse = new RpcReponse();
-
-        reponse.setRequestId(request.getRequestId());
-
+    @Override
+    public void channelRead0(final ChannelHandlerContext ctx, RpcRequest request)
+            throws Exception {
+        RpcReponse response = new RpcReponse();
+        response.setRequestId(request.getRequestId());
         try {
-            Object handle = handle(request);
-
-            reponse.setResult(handle);
-
-        } catch (Throwable throwable) {
-            throwable.printStackTrace();
-            reponse.setError(throwable);
+            //根据request来处理具体的业务调用
+            Object result = handle(request);
+            response.setResult(result);
+        } catch (Throwable t) {
+            response.setError(t);
         }
-
         //写入 outbundle（即RpcEncoder）进行下一步处理（即编码）后发送到channel中给客户端
-
-        channelHandlerContext.writeAndFlush(reponse).addListener(ChannelFutureListener.CLOSE);
-
-
+        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
     }
-
-
 
     /**
      * 根据request来处理具体的业务调用
-     * 调用时通过反射的方式来完成的
+     * 调用是通过反射的方式来完成
+     *
+     * @param request
+     * @return
+     * @throws Throwable
      */
-
-    private Object handle(RpcRequest request) throws Throwable{
+    private Object handle(RpcRequest request) throws Throwable {
         String className = request.getClassName();
 
-        //拿到类的实现类
+        //拿到实现类对象
         Object serviceBean = handlerMap.get(className);
 
-        //拿到要调用的方法名，参数类型，参数值
+        //拿到要调用的方法名、参数类型、参数值
         String methodName = request.getMethodName();
         Class<?>[] parameterTypes = request.getParameterTypes();
         Object[] parameters = request.getParameters();
@@ -80,17 +70,13 @@ public class RpcHandler extends SimpleChannelInboundHandler<RpcRequest> {
         //拿到接口类
         Class<?> forName = Class.forName(className);
 
-        //调用实现类对象的指定房扥啊并且返回结果
+        //调用实现类对象的指定方法并返回结果
         Method method = forName.getMethod(methodName, parameterTypes);
-        return method.invoke(serviceBean,parameters);
-
+        return method.invoke(serviceBean, parameters);
     }
 
-
-
-
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         LOGGER.error("server caught exception", cause);
         ctx.close();
     }
